@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    filename="basic.log"
+    filename="mail.log"
 )
 
 # Define a dictionary of replacements
@@ -178,7 +178,8 @@ def has_number(string):
 
 
 if __name__ == '__main__':
-    df = pd.read_excel('./base_proporcional_mercado_50000.xlsx')
+    logging.info('start')
+    df = pd.read_excel('./base_4.xlsx')
     df_dict = df.to_dict('records')
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
@@ -195,7 +196,6 @@ if __name__ == '__main__':
             input_street = unidecode(str(row['address'])).upper()
             input_street = pattern.sub(lambda match: street_replacements[match.group(0)], input_street)
             input_street = input_street.strip()
-            input_number = row['number']
             input_neighborhood = unidecode(str(row['quarter'])).upper()
             input_city = unidecode(row['city']).upper()
             input_state = unidecode(row['state_code']).upper()
@@ -241,7 +241,7 @@ if __name__ == '__main__':
                 if input_zip[:5] == mail_zip[:5]:  
                     score += 20
 
-                row['CORREIOS_OUTPUT'] = mail_street_raw+' , '+mail_neighborhood+' , '+mail_city+' , '+mail_state+' , '+mail_zip
+                row['CORREIOS_OUTPUT'] = mail_street_raw+', '+mail_neighborhood+', '+mail_city+', '+mail_state+', '+mail_zip
 
                 if score >= 50:
                     row['AUTO_CORREIOS'] = 'SIM'
@@ -261,7 +261,7 @@ if __name__ == '__main__':
                 if input_zip[:5] == mail_zip[:5]:  
                     score += 20
 
-                row['CORREIOS_OUTPUT'] = mail_street_raw+' , '+mail_city+' , '+mail_state+' , '+mail_zip
+                row['CORREIOS_OUTPUT'] = mail_street_raw+', '+mail_city+', '+mail_state+', '+mail_zip
 
                 if score == 50:
                     df_dict['AUTO_CORREIOS'] = 'SIM'
@@ -272,13 +272,20 @@ if __name__ == '__main__':
             new_search.click()
 
         except Exception as error:
-                element = WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.ID, 'mensagem-resultado-alerta')))
-                alert = element.text
-                if alert == 'Dados não encontrado':
-                    row['AUTO_CORREIOS'] = 'NÃO'
-                new_search = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, 'btn_nbusca')))
-                new_search.click()
-  
+                try:
+                    element = WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.ID, 'mensagem-resultado-alerta')))
+                    alert = element.text
+                    if alert == 'Dados não encontrado':
+                        row['AUTO_CORREIOS'] = 'NÃO'
+                    else:
+                        logging.error(error)
+    
+                    new_search = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, 'btn_nbusca')))
+                    new_search.click()
+                except:
+                    new_search = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, 'btn_nbusca')))
+                    new_search.click()
 
     df = pd.DataFrame(df_dict)
-    df.to_excel('base_50k_rotulada.xlsx', index=False)
+    df.to_excel('4.xlsx', index=False)
+    logging.info('end')
